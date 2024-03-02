@@ -59,23 +59,12 @@ def get_data(messages):
 notes, starts, vels = get_data(all_messages_all_files)
 
 X_vals = np.array([notes, starts, vels]).T
-print(X_vals.shape)
-print(X_vals[:10])
-
-nunique = np.unique(X_vals, axis=0, return_counts=True)
-print(len(nunique[0]))
-
-
 # notes
 
 n = np.unique(X_vals[:,0], return_counts=True)
-print(n)
 notes_extreme = n[0][n[1] < 100]
-print('\n',notes_extreme,len(notes_extreme),'\n')
 X_vals = X_vals[~np.isin(X_vals[:,0], notes_extreme)]
 
-nunique = np.unique(X_vals, axis=0, return_counts=True)
-print(len(nunique[0]))
 
 # starts
 
@@ -84,41 +73,19 @@ X_vals[:,1][X_vals[:,1] >= start_max] = start_max
 X_vals[:,1] = np.where(X_vals[:,1]!=1, np.round(X_vals[:,1].copy(), -2).astype(int),X_vals[:,1]) # dont remove the 1 on the time (which correspond to the end of the song)
 
 nunique = np.unique(X_vals, axis=0, return_counts=True)
-print(nunique[0])
 
-# with open('nunique_elements.txt', 'w') as file:
-#     for element in nunique[0]:
-#         file.write(str(element) + '\n')
-
-
-
-# --> dictionary length = 1705
-
-
-# ## Tokenize the data
-
+# Tokenize the data
 
 tokenToVals = nunique[0]
-print(tokenToVals[:5])
 ValsToToken = {tuple(v):i for i,v in enumerate(tokenToVals)}
-print(ValsToToken[(1,1,1)])
 vocab_size = len(tokenToVals)
 
-
-
 X = np.array([ValsToToken[tuple(x)] for x in X_vals])
-print(X[:10])
-print(len(X))
-
 
 a = np.random.randint(0, len(tokenToVals), 10)
-print(a)
-print([tuple(tokenToVals[i]) for i in a])
 
 
-
-print(len(ValsToToken))
-
+# MODEL
 
 import torch
 import torch.nn as nn
@@ -126,17 +93,23 @@ import torch.nn.functional as F
 
 block_size = 256
 batch_size = 32
+n_embd = 256 # be a multiple of n_head
+dropout = 0.1
+n_heads = 8 # be a divisible of n_embd
+vocab_size = len(tokenToVals)
+n_layer = 6
+learning_rate = 5e-3
+eval_iters = 100
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 
-X = torch.tensor([ValsToToken[tuple(x)] for x in X_vals], dtype=torch.long)
 
-
+X = torch.tensor([ValsToToken[tuple(x)] for x in X_vals], dtype=torch.long, device=device)
 n = int(0.9*len(X))
 X_train = X[:n]
 X_val = X[n:]
-
 
 def get_batch(split):
     # generate a small batch of data of inputs x and targets y
@@ -147,12 +120,22 @@ def get_batch(split):
     x, y = x.to(device), y.to(device)
     return x, y
 
-
-# Signle head self-attention
-
-n_embd = 256
-dropout = 0.1
-
+@torch.no_grad()
+def estimate_loss():
+    out = {}
+    model.eval()
+    for split in ['train', 'val']:
+        losses = torch.zeros(eval_iters)
+        for k in range(eval_iters):
+            X, Y = get_batch(split)
+            # print(X.shape,Y.shape)
+            logits, loss = model(X, Y)
+            losses[k] = loss.item()
+        out[split] = losses.mean()
+    model.train()
+    # print(out)
+    return out
+# Single head self-attention
 class Head(nn.Module):
     """ one head of self-attention """
 
@@ -180,10 +163,7 @@ class Head(nn.Module):
         v = self.value(x) # (B,T,hs)
         out = wei @ v # (B, T, T) @ (B, T, hs) -> (B, T, hs)
         return out
-
-
 # multi-head self-attention
-
 class MultiHead(nn.Module):
     """ multi-head self-attention """
 
@@ -199,8 +179,7 @@ class MultiHead(nn.Module):
         out = torch.cat([h(x) for h in self.heads], dim=-1)
         out = self.dropout(self.proj(out))
         return out
-
-
+# feed-forward layer
 class FeedForward(nn.Module):
     """ a simple linear layer followed by a non-linearity """
     
@@ -216,12 +195,7 @@ class FeedForward(nn.Module):
     def forward(self, x):
         out = self.net(x)
         return out
-
-
 # block
-
-n_heads = 8
-# head_size = 64
 class Block(nn.Module):
     """ a transformer Block """
     
@@ -237,11 +211,7 @@ class Block(nn.Module):
         x = x + self.MultiHeads(self.ln1(x))
         x = x + self.ffwd(self.ln2(x))
         return x
-
-
 # transformer
-vocab_size = len(tokenToVals)
-n_layer = 6
 class Transformer(nn.Module):
     
     def __init__(self):
@@ -302,34 +272,12 @@ class Transformer(nn.Module):
         return idx
 
 
-learning_rate = 1e-2
-
 model = Transformer()
 model = model.to(device)
 # m=model
 print(sum(p.numel() for p in model.parameters()), 'parameters')
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
-
-
-eval_iters = 100
-
-@torch.no_grad()
-def estimate_loss():
-    out = {}
-    model.eval()
-    for split in ['train', 'val']:
-        losses = torch.zeros(eval_iters)
-        for k in range(eval_iters):
-            X, Y = get_batch(split)
-            # print(X.shape,Y.shape)
-            logits, loss = model(X, Y)
-            losses[k] = loss.item()
-        out[split] = losses.mean()
-    model.train()
-    # print(out)
-    return out
-
 
 max_iters = 5000
 eval_interval = 500
