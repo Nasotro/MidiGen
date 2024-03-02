@@ -3,6 +3,7 @@ import mido
 import numpy as np
 import matplotlib.pyplot as plt
 
+print('catch all the data')
 
 def get_midis():
     ms = []
@@ -279,15 +280,15 @@ print(sum(p.numel() for p in model.parameters()), 'parameters')
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
-max_iters = 5000
+max_iters = 500
 eval_interval = 500
 
 for iter in range(max_iters):
 
-    # every once in a while evaluate the loss on train and val sets
-    if iter % eval_interval == 0 or iter == max_iters - 1:
-        losses = estimate_loss()
-        print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+    # # every once in a while evaluate the loss on train and val sets
+    # if iter % eval_interval == 0 or iter == max_iters - 1:
+    #     losses = estimate_loss()
+    #     print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
     # sample a batch of data
     xb, yb = get_batch('train')
@@ -304,13 +305,11 @@ torch.save(model.state_dict(), 'model1.pth')
 
 
 
-# ## converting it back to music
-
+# converting it back to music
 
 decode = lambda x: [tokenToVals[i] for i in x]
 context = torch.zeros((1,1), dtype=torch.long, device=device)
 print(decode(model.generate(context, max_new_tokens=100)[0].tolist()))
-
 
 def tokensToMidi(tokens):
     vals = decode(tokens)
@@ -323,7 +322,7 @@ def tokensToMidi(tokens):
         if(np.array_equal(t, [0,0,0])): continue
         notes.append(t[0])
         starts.append(t[1])
-        vels.append(t[2])
+        vels.append(64 if t[2] == 1 else 0)
     createMidiFileWithAllMessages(notes, starts, vels, 'test.mid')
 
 
