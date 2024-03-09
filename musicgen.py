@@ -86,20 +86,20 @@ X = np.array([ValsToToken[tuple(x)] for x in X_vals])
 a = np.random.randint(0, len(tokenToVals), 10)
 
 
-# MODEL
+# MODEL --> apprends plus vite stp
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-block_size = 256
-batch_size = 32
+block_size = 128
+batch_size = 64
 n_embd = 256 # be a multiple of n_head
-dropout = 0.1
+dropout = 0.2
 n_heads = 8 # be a divisible of n_embd
-vocab_size = len(tokenToVals)
+vocab_size = len(tokenToVals) # ~= 1800
 n_layer = 6
-learning_rate = 5e-3
+learning_rate = 0.05
 eval_iters = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -273,22 +273,29 @@ class Transformer(nn.Module):
         return idx
 
 
+import torch.optim.lr_scheduler as lr_scheduler
+
+
 model = Transformer()
 model = model.to(device)
-# m=model
+
+max_iters = 10000
+eval_interval = 200
+lossi = []
+
 print(sum(p.numel() for p in model.parameters()), 'parameters')
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
-
-max_iters = 500
-eval_interval = 500
+scheduler = lr_scheduler.StepLR(optimizer, step_size=2000, gamma=0.5)
 
 for iter in range(max_iters):
 
-    # # every once in a while evaluate the loss on train and val sets
-    # if iter % eval_interval == 0 or iter == max_iters - 1:
-    #     losses = estimate_loss()
-    #     print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+    # every once in a while evaluate the loss on train and val sets
+    if iter % eval_interval == 0 or iter == max_iters - 1:
+        print(optimizer.param_groups[0]['lr'])
+        losses = estimate_loss()
+        lossi.append(losses)
+        print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
     # sample a batch of data
     xb, yb = get_batch('train')
@@ -298,13 +305,17 @@ for iter in range(max_iters):
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
+    scheduler.step()
 
 
 # save the model
 torch.save(model.state_dict(), 'model1.pth')
 
-
-
+print(lossi)
+plt.plot([l['train'] for l in lossi], label='train')
+plt.plot([l['val'] for l in lossi], label='val')
+plt.legend()
+plt.show()
 # converting it back to music
 
 decode = lambda x: [tokenToVals[i] for i in x]
