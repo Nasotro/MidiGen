@@ -50,7 +50,7 @@ Through this project, I aimed to:
 
 ## Future Work ??
 
-- ??? Separate training and inference code into different files.
+- ?? Separate training and inference code into different files.
 - ?? Improve MIDI data preprocessing.
 - ?? Explore more advanced optimization techniques.
 - ?? Document the code more thoroughly.
