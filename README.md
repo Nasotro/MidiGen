@@ -1,0 +1,62 @@
+# Transformer Architecture for MIDI Files
+
+This project is a personal exploration of implementing the Transformer architecture (decoder only) for processing MIDI files. The goal is to learn and understand the intricacies of the Transformer model and its application to musical data.
+
+## Table of Contents
+
+- [Description](#description)
+- [Usage](#usage)
+- [Features](#features)
+- [Learning Outcomes](#learning-outcomes)
+- [References](#references)
+- [Future Work](#future-work)
+- [Contact](#contact)
+
+## Description
+
+I first had the idea of this project after I watched the whole playlist of [Andrej Karpathy](https://github.com/karpathy) : [From zero to hero](https://www.youtube.com/watch?v=VMj-3S1tku0&list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ). These videos taught me the bases of deep learning coding using pytorch. I wanted to challenge myself by implementing what i learned into a real project. 
+
+This project aims to implement a Transformer decoder to process MIDI files. The focus is on understanding the architecture and its application to musical data rather than creating a production tool.
+
+## Usage
+
+To run the project, run the following command : 
+```bash
+python musicgen.py
+```
+This will execute the Transformer decoder model. Training and inferencing is in the same file. I intend to change that in the future.
+
+## Features
+
+- Implementation of the Transformer decoder architecture with pytroch.
+- Processing of MIDI files.
+- Basic training and inference capabilities.
+- Optimisation techniques such as cuda to accelerate the training.
+
+## Learning outcomes
+Through this project, I aimed to:
+- Understand the Transformer architecture, particularly the decoder component.
+- Learn how to preprocess and handle MIDI data.
+- Gain experience in implementing and training neural networks.
+- Explore the application of deep learning in music processing.
+
+## References
+
+- [Attention is All You Need](https://arxiv.org/abs/1706.03762) - The original Transformer paper.
+- [Kaggle MIDI dataset](https://www.kaggle.com/datasets/soumikrakshit/classical-music-midi) - The dataset used for this project
+- [From zero to hero](https://www.youtube.com/watch?v=VMj-3S1tku0&list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) Karpathy playlist - Inspiration
+- [MIDI Processing Libraries](https://mido.readthedocs.io/en/stable/) - Libraries used for MIDI file processing.
+
+## Future Work
+
+- Separate training and inference code into different files.
+- Improve MIDI data preprocessing.
+- Explore more advanced optimization techniques.
+- Document the code more thoroughly.
+
+## Contact
+
+Lorrain MORLET - lorrain.morlet@edu.devinci.fr
+
+Project Link : https://github.com/Nasotro/MidiGen
+
